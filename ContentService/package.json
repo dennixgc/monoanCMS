@@ -1,0 +1,14 @@
+{
+    "name": "WebNGContentService",
+    "private": true,
+    "version": "1.0.0",
+    "description": "The service project",
+    "devDependencies": {
+        "mongodb": "",
+        "express": "",
+        "connect-busboy": "",
+        "body-parser": "",
+        "uuid": "",
+        "async":""
+    }
+}

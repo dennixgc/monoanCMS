@@ -1,0 +1,153 @@
+<!DOCTYPE html ng-app="myApp" >
+<!--[if lt IE 7]>      <html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html lang="en" ng-app="myApp" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html lang="en" ng-app="myApp" class="no-js"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>webNG Console</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="bower_components/html5-boilerplate/css/normalize.css">
+  <link rel="stylesheet" href="bower_components/html5-boilerplate/css/main.css">
+  <link rel="stylesheet" href="css/pure-min.css"/>
+  <link rel="stylesheet" href="css/app.css"/>
+  <link rel="stylesheet" href="css/font-awesome/css/font-awesome.min.css"/>
+  <link rel="stylesheet" href="bower_components/ng-ckeditor/ng-ckeditor.css"/>
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/html5-boilerplate/js/vendor/modernizr-2.6.2.min.js"></script>
+
+    <link rel="stylesheet" href="bower_components/kindeditor-4.1.10/themes/default/default.css" />
+    <script charset="utf-8" src="bower_components/kindeditor-4.1.10/kindeditor-min.js"></script>
+    <script charset="utf-8" src="bower_components/kindeditor-4.1.10/lang/zh_CN.js"></script>
+</head>
+<body ng-controller="webNGConsole">
+
+<div id="topBar" style="height:30px;background-color: #0078e7;color:#ffeeff">webNG 内容管理平台</div>
+<div id="MainBody" style="width: 100%">
+    <div id="folderNavi" style="display: inline-block;width:200px;min-height:1000px;border-right:solid 1px blue;vertical-align: top;padding: 10px ">
+         <div ng-repeat="l1 in folders|inFolder:null" >
+             <div ng-click="loadFolder(l1)" ng-class="(l1 == currentFolder)?'activeFolder':''" style="cursor: pointer;font-weight: bolder">
+                 {{l1.title}}
+             </div>
+             <div ng-repeat="l2 in folders|inFolder:l1.Id"  style="padding-left: 20px;">
+                 <div  ng-click="loadFolder(l2)" ng-class="(l2 == currentFolder)?'activeFolder':''" style="cursor: pointer">
+                     {{l2.title}}</div>
+                 <div ng-repeat="l3 in folders|inFolder:l2.Id"  style="padding-left: 30px;">
+                     <div  ng-click="loadFolder(l3)" ng-class="(l3 == currentFolder)?'activeFolder':''" style="cursor: pointer;font-size: 14px">
+                         {{l3.title}}</div>
+                 </div>
+             </div>
+         </div>
+    </div>
+    <div id="docListArea" style="display: inline-block;width:200px;min-height:1000px;border-right:solid 1px blue;vertical-align: top;padding: 10px">
+      <button class="pure-button" ng-click="doNewDoc()" ng-show="currentFolder.isDocFolder">新文章</button>
+      <button class="pure-button" ng-click="doNewImage()" ng-show="currentFolder.isImageFolder">新图片</button>
+      <div ng-repeat="doc in docList" style="cursor: pointer" ng-class="(imageActive == doc || docEditing == doc)?'activeDoc':''" ng-click="doDocActive(doc)">
+          <img ng-src="img/icon_{{doc.type}}.png" style="width:20px;margin-right: 10px">{{doc.title}}
+      </div>
+    </div>
+    <div id="docArea" style="display: inline-block;width:600px;vertical-align: top;padding: 10px"
+            ng-show="currentFolder.isDocFolder">
+        <div id="docMenuPanel">
+            <button type="submit" ng-disabled="!docEditing || editing" class="pure-button" ng-click="doEditDoc()">编辑</button>
+
+            <button class="pure-button" ng-disabled="!editing" ng-click="doneEditDoc()">保存</button>
+            <button class="pure-button" ng-disabled="!editing" ng-click="cancelEdit()">放弃</button>
+
+            <button class="pure-button" ng-disabled="!docEditing || editing" ng-click="doRemove(docEditing);docEditing=null">删除</button>
+            <button class="pure-button" ng-disabled="!docEditing || editing" ng-click="doApproval()">审批通过</button>
+            <button class="pure-button" ng-disabled="!docEditing || editing" ng-click="doPulldown()">撤回</button>
+        </div>
+        <div id="docPreView" ng-show="!editing">
+            <div id="preViewBox" style="width: 600px" ng-bind-html="docEditing.htmlSafe">
+            </div>
+        </div>
+        <div id="docEditing" ng-show="editing">
+            <div id="docMetaPanel" style="position: relative">
+                <label>标题：</label><input type="text" class="pure-input-rounded" ng-model="docEditing.title" placeholder="请输入新文档标题"><br>
+                <label>来源：</label><input type="text" class="pure-input-rounded"><br>
+                <label>发表日期：</label><input type="text" class="pure-input-rounded"><br>
+            </div>
+            <div id="ContentHTMLPanel" style="position: relative">
+                <textarea id="docEditinput" name="docEditinput" style="width:700px;height:500px;visibility:hidden;"></textarea>
+
+            </div>
+            <div id="AttachmentPanel">
+                <div>添加附件</div>
+                <input type="file" ng-file-select="onFileSelect($files)" accept="*">
+                <div class="p_form_line">
+                    <div id="uploadProgress" style="position:relative;height:13px;border:1px solid blue;background-color: #aaaaaa" ng-show="showUploadProgress">
+                        <div id="progressBar" style="width: 0;height: 100%;background-color: blue" ng-style="{width:percentUpload+'%'}"></div>
+                        <label style="position: absolute;left: 50%; margin-left:-10px; top:0px;font-size: 11px;color:#ffffff">{{percentUpload}}%</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="ImageArea" style="display: inline-block;width:600px;vertical-align: top;padding: 10px"
+         ng-show="currentFolder.isImageFolder">
+        <div id="imgMenuPanel">
+            <button class="pure-button" ng-disabled="!imageActive || editing" class="pure-button" ng-click="doEditImage()">编辑</button>
+
+            <button class="pure-button" ng-disabled="!editing" ng-click="doneEditImage()">保存</button>
+            <button class="pure-button" ng-disabled="!editing" ng-click="cancelEdit()">放弃</button>
+
+            <button class="pure-button" ng-disabled="!imageActive || editing" ng-click="doRemove(imageActive);imageActive=null">删除</button>
+            <button class="pure-button" ng-disabled="!imageActive || editing" ng-click="doApprovalImage()">审批通过</button>
+            <button class="pure-button" ng-disabled="!imageActive || editing" ng-click="doPulldownImage()">撤回</button>
+        </div>
+        <div id="imageEditing" ng-show="imageActive">
+            <div id="imageMetaPanel" style="position: relative" ng-show="editing">
+                <label>标题：</label><input type="text" class="pure-input-rounded" ng-model="imageActive.title" placeholder="请输入新文档标题"><br>
+                <label>来源：</label><input type="text" class="pure-input-rounded"><br>
+                <label>发表日期：</label><input type="text" class="pure-input-rounded"><br>
+            </div>
+            <div id="ImagePanel" ng-show="editing">
+                <span>上传图片</span>
+                <input type="file" ng-file-select="onImageSelect($files)" accept="image/*">
+                <div class="p_form_line">
+                    <div id="imageUploadProgress" style="position:relative;height:13px;border:1px solid blue;background-color: #aaaaaa" ng-show="showUploadProgress">
+                        <div id="imageProgressBar" style="width: 0;height: 100%;background-color: blue" ng-style="{width:percentUpload+'%'}"></div>
+                        <label style="position: absolute;left: 50%; margin-left:-10px; top:0px;font-size: 11px;color:#ffffff">{{percentUpload}}%</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="imagePreView" ng-show="imageActive">
+            <div>{{imageActive.title}}</div>
+
+            <div ng-hide="imageActive.url">图片文件为空， 请选择上传：</div>
+            <img ng-show="imageActive.url" id="imagePreViewBox" style="width: 400px" ng-src="{{imageActive.url}}">
+        </div>
+    </div>
+</div>
+
+
+
+
+
+</body>
+  <script src="bower_components/ng-ckeditor/libs/ckeditor/ckeditor.js"></script>
+  <script src="bower_components/ng-file-upload/angular-file-upload-shim.min.js"></script>
+  <script src="bower_components/angular/angular.js"></script>
+  <script src="bower_components/ng-file-upload/angular-file-upload.min.js"></script>
+  <script src="bower_components/angular-sanitize.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/controllers.js"></script>
+  <script src="js/filters.js"></script>
+    <script>
+        var ImageUploadUrl = "http://localhost:9300/image/upload";   //For kindEditor  imgae plug-in
+        var ImageListUrl = "http://localhost:9300/image/list";      //For kindEditor  file-Manager plug-in
+        var editor;
+        KindEditor.ready(function(K) {
+            editor = K.create('textarea[name="docEditinput"]', {
+                resizeType : 1,
+                allowPreviewEmoticons : false,
+                allowImageUpload : true,
+                allowFileManager : true
+            });
+        });
+    </script>
+</html>
